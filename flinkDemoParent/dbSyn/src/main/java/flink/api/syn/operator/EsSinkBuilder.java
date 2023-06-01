@@ -1,7 +1,9 @@
 package flink.api.syn.operator;
 
+import flink.api.syn.constant.PropertiesConstant;
 import flink.api.syn.pojo.EsRow;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.streaming.connectors.elasticsearch.util.RetryRejectedExecutionFailureHandler;
@@ -20,18 +22,21 @@ import org.elasticsearch.common.xcontent.XContentType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 创建 es sink
+ */
 public class EsSinkBuilder {
     private EsSinkBuilder() {
     }
 
-    public static ElasticsearchSink<EsRow> build() {
+    public static ElasticsearchSink<EsRow> build(ParameterTool param) {
         List<HttpHost> httpHosts = new ArrayList<>();
-        httpHosts.add(new HttpHost("127.0.0.1", 9200, "http"));
+        httpHosts.add(new HttpHost(param.get(PropertiesConstant.ES_HOST), param.getInt(PropertiesConstant.ES_PORT), "http"));
         ElasticsearchSink.Builder<EsRow> esSinkBuilder = new ElasticsearchSink.Builder<>(httpHosts, new EsSinkFunction());
         esSinkBuilder.setBulkFlushMaxActions(1000);
         esSinkBuilder.setBulkFlushInterval(1000);  //每秒刷新一次
         esSinkBuilder.setFailureHandler(new RetryRejectedExecutionFailureHandler());
-        esSinkBuilder.setRestClientFactory(new EsClientFactory());
+        esSinkBuilder.setRestClientFactory(new EsClientFactory(param.get(PropertiesConstant.ES_USERNAME), param.get(PropertiesConstant.ES_PASS)));
         return esSinkBuilder.build();
     }
 
@@ -39,11 +44,19 @@ public class EsSinkBuilder {
      * 客户端连接
      */
     private static class EsClientFactory implements RestClientFactory {
+        private String username;
+        private String pass;
+
+        private EsClientFactory(String username, String pass) {
+            this.username = username;
+            this.pass = pass;
+        }
+
         @Override
         public void configureRestClientBuilder(RestClientBuilder restClientBuilder) {
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(AuthScope.ANY,
-                    new UsernamePasswordCredentials("elastic", "root001"));
+                    new UsernamePasswordCredentials(username, pass));
             restClientBuilder.setDefaultHeaders(new BasicHeader[]{new BasicHeader("Content-Type", "application/json")}); //以数组的形式可以添加多个header
             restClientBuilder.setHttpClientConfigCallback(httpClientBuilder -> {
                 httpClientBuilder.disableAuthCaching();

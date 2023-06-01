@@ -37,11 +37,11 @@ public class Mysql2EsSynTask {
             setCheckPoint(env);
         }
 
-        DataStreamSource<MysqlRow> source = env.fromSource(MySqlSourceBuilder.build(), waterMark(), MYSQL_SOURCE_NAME);
+        DataStreamSource<MysqlRow> source = env.fromSource(MySqlSourceBuilder.build(param), waterMark(), MYSQL_SOURCE_NAME);
         source.keyBy(MysqlRow::getTableName)
                         .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
                                 .process(new AssemblingAndSortProcess())
-                                        .addSink(EsSinkBuilder.build());
+                                        .addSink(EsSinkBuilder.build(param));
         env.execute(TASK_NAME);
     }
 

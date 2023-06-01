@@ -4,13 +4,33 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>org.samur</groupId>
     <artifactId>flinkDemoParent</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>dbSyn</module>
+        <module>common</module>
+    </modules>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <encoding>UTF-8</encoding>
+        <scala.binary.version>2.11</scala.binary.version>
+        <flink.version>1.13.6</flink.version>
+        <java.version>1.8</java.version>
+        <flink.connector.mysql.cdc.version>2.2.0</flink.connector.mysql.cdc.version>
+        <fastjson.version>1.2.56</fastjson.version>
+        <rocksdb.version>1.13.2</rocksdb.version>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>${fastjson.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

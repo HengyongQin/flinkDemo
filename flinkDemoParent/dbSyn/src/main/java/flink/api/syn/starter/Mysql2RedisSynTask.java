@@ -24,7 +24,7 @@ public class Mysql2RedisSynTask extends AbstractMysqlTask {
         source.keyBy(MysqlRow::getTableName)
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
                 .process(new AssemblingRedisRowAndSortProcess())
-                .addSink(new CustomRedisSink(param.get(PropertiesConstant.REDIS_HOST), param.getInt(PropertiesConstant.REDIS_PORT)));
+                .addSink(new CustomRedisSink());
 
         env.execute(TASK_NAME);
     }

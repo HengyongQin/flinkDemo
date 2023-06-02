@@ -8,16 +8,16 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * redisRow 封装及排序
  */
-public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<MysqlRow, RedisRow, String, TimeWindow> {
+public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<MysqlRow, RedisRow[], String, TimeWindow> {
     @Override
-    public void process(String key, ProcessWindowFunction<MysqlRow, RedisRow, String, TimeWindow>.Context context, Iterable<MysqlRow> elements, Collector<RedisRow> out) {
+    public void process(String key, ProcessWindowFunction<MysqlRow, RedisRow[], String, TimeWindow>.Context context, Iterable<MysqlRow> elements, Collector<RedisRow[]> out) {
+        List<RedisRow> rows = new ArrayList<>();
+
         Lists.newArrayList(elements).stream()
                 .map(
                         row -> {
@@ -44,6 +44,8 @@ public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<Mysq
                         }
                 )
                 .sorted(Comparator.comparing(RedisRow::getPos))
-                .forEach(out::collect);
+                .forEach(rows::add);
+
+        out.collect(rows.toArray(new RedisRow[0]));
     }
 }

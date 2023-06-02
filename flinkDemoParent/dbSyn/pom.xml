@@ -89,13 +89,6 @@
             <version>${rocksdb.version}</version>
         </dependency>
 
-
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>3.7.1</version>
-        </dependency>
-
     </dependencies>
 
 

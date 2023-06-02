@@ -3,6 +3,7 @@ package flink.api.syn.operator;
 import com.google.common.collect.Lists;
 import com.samur.common.pojo.MysqlRow;
 import com.samur.common.pojo.RowOptType;
+import com.samur.common.utils.KeyUtils;
 import flink.api.syn.pojo.RedisRow;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -21,17 +22,8 @@ public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<Mysq
         Lists.newArrayList(elements).stream()
                 .map(
                         row -> {
-                            String index = row.getDatabase() + "_" + row.getTableName();
-                            String[] keys = row.getKeys();
                             Map<String, Object> after = row.getAfter();
                             Map<String, Object> before = row.getBefore();
-                            RowOptType optType = row.getOptType();
-                            StringBuilder idBuilder = new StringBuilder();
-
-                            for (String primaryKey : keys) {
-                                idBuilder.append("_").append(optType.equals(RowOptType.DELETE) ? before.get(primaryKey) : after.get(primaryKey));
-                            }
-
                             Map<String, String> data = new HashMap<>();
 
                             if(after != null && !after.isEmpty()) {
@@ -40,7 +32,9 @@ public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<Mysq
                                 }
                             }
 
-                            return new RedisRow(index + idBuilder, data, row.getOptType(), row.getTs());
+                            String redisKey = KeyUtils.createRedisKey(row.getDatabase(), row.getTableName(), row.getKeys()
+                                    , before == null || before.isEmpty() ? after : before);
+                            return new RedisRow(redisKey, data, row.getOptType(), row.getTs());
                         }
                 )
                 .sorted(Comparator.comparing(RedisRow::getPos))

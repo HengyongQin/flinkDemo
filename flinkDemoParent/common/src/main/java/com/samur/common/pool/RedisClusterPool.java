@@ -19,16 +19,24 @@ public class RedisClusterPool {
         if(pool == null) {
             lock.lock();
 
-            if(pool == null) {
-                JedisPoolConfig config = new JedisPoolConfig();
-                config.setMaxTotal(10);
-                config.setMaxIdle(5);
-                config.setMinIdle(1);
-                config.setTestOnBorrow(true);
-                pool = new JedisPool(config
-                        , PropertiesHelper.getValue(PropertiesConstant.REDIS_HOST)
-                        , PropertiesHelper.getInt(PropertiesConstant.REDIS_PORT));
+            try {
+                if(pool == null) {
+                    System.out.println("开始创建线程池！！");
+                    JedisPoolConfig config = new JedisPoolConfig();
+                    config.setMaxTotal(10);
+                    config.setMaxIdle(5);
+                    config.setMinIdle(1);
+                    config.setTestOnBorrow(true);
+                    pool = new JedisPool(config
+                            , PropertiesHelper.getValue(PropertiesConstant.REDIS_HOST)
+                            , PropertiesHelper.getInt(PropertiesConstant.REDIS_PORT));
+                    System.out.println("创建线程池成功~~~~");
+                }
             }
+            finally {
+                lock.unlock();
+            }
+
         }
 
         return pool;

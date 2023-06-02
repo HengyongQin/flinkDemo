@@ -14,6 +14,15 @@ public class RedisRow extends SinkRow {
         this.key = key;
         this.data = data;
         this.optType = optType;
+        this.dataType = DataType.HASH;
+    }
+
+    public RedisRow(String key, String data, RowOptType optType, long ts) {
+        super(optType, ts);
+        this.key = key;
+        this.data = data;
+        this.optType = optType;
+        this.dataType = DataType.STRING;
     }
 
     /**
@@ -26,5 +35,12 @@ public class RedisRow extends SinkRow {
      * redis value， hash结构
      */
     @Getter
-    private Map<String, String> data;
+    private Object data;
+
+    @Getter
+    private DataType dataType;
+
+    public enum DataType {
+        HASH, STRING
+    }
 }

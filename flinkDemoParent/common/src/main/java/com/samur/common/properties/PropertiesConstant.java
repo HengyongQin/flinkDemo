@@ -28,7 +28,7 @@ public class PropertiesConstant {
     /**
      * mysql 同步到es 的表
      */
-    public static final String MYSQL_ES_LISTEN_TABLES = "mysql.es.listen.tables";
+    public static final String MYSQL_ES_LISTEN_TABLES = "mysql_listen_tables";
 
     /**
      * es配置

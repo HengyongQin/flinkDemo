@@ -1,7 +1,8 @@
 package flink.api.syn.starter;
 
 import com.samur.common.pojo.MysqlRow;
-import flink.api.syn.constant.PropertiesConstant;
+import com.samur.common.properties.PropertiesConstant;
+import com.samur.common.properties.PropertiesHelper;
 import flink.api.syn.operator.MySqlSourceBuilder;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend;
@@ -53,7 +54,7 @@ public abstract class AbstractMysqlTask {
      * @throws IOException
      */
     protected static ParameterTool getParam(String[] args) throws IOException {
-        return ParameterTool.fromPropertiesFile(Mysql2EsSynTask.class.getResourceAsStream(PropertiesConstant.PROP_PATH))
+        return ParameterTool.fromPropertiesFile(PropertiesHelper.getPropertiesResource())
                 .mergeWith(ParameterTool.fromArgs(args));
     }
 

@@ -1,6 +1,6 @@
 package flink.api.syn.operator;
 
-import flink.api.syn.constant.PropertiesConstant;
+import com.samur.common.properties.PropertiesConstant;
 import flink.api.syn.pojo.EsRow;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.utils.ParameterTool;

@@ -1,4 +1,4 @@
-package flink.api.syn.constant;
+package com.samur.common.properties;
 
 public class PropertiesConstant {
 

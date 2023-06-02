@@ -1,7 +1,7 @@
 package flink.api.syn.starter;
 
 import com.samur.common.pojo.MysqlRow;
-import flink.api.syn.constant.PropertiesConstant;
+import com.samur.common.properties.PropertiesConstant;
 import flink.api.syn.operator.AssemblingRedisRowAndSortProcess;
 import flink.api.syn.operator.CustomRedisSink;
 import org.apache.flink.api.java.utils.ParameterTool;

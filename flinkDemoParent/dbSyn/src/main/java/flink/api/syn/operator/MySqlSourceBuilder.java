@@ -2,7 +2,7 @@ package flink.api.syn.operator;
 
 import com.samur.common.pojo.MysqlRow;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import flink.api.syn.constant.PropertiesConstant;
+import com.samur.common.properties.PropertiesConstant;
 import flink.api.syn.serial.MysqlBinlogSerialize;
 import org.apache.flink.api.java.utils.ParameterTool;
 

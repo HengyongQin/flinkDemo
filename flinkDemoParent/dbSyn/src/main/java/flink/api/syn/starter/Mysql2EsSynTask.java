@@ -2,7 +2,7 @@ package flink.api.syn.starter;
 
 import com.samur.common.pojo.MysqlRow;
 import flink.api.syn.operator.EsSinkBuilder;
-import flink.api.syn.operator.AssemblingAndSortProcess;
+import flink.api.syn.operator.AssemblingEsRowAndSortProcess;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -23,7 +23,7 @@ public class Mysql2EsSynTask extends AbstractMysqlTask {
 
         source.keyBy(MysqlRow::getTableName)
                         .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
-                                .process(new AssemblingAndSortProcess())
+                                .process(new AssemblingEsRowAndSortProcess())
                                         .addSink(EsSinkBuilder.build(param));
         env.execute(TASK_NAME);
     }

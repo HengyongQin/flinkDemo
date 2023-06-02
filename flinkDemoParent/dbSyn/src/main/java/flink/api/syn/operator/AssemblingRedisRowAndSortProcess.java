@@ -1,20 +1,23 @@
 package flink.api.syn.operator;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.samur.common.pojo.MysqlRow;
 import com.samur.common.pojo.RowOptType;
-import flink.api.syn.pojo.EsRow;
+import flink.api.syn.pojo.RedisRow;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
-public class AssemblingAndSortProcess extends ProcessWindowFunction<MysqlRow, EsRow, String, TimeWindow> {
+/**
+ * redisRow 封装及排序
+ */
+public class AssemblingRedisRowAndSortProcess extends ProcessWindowFunction<MysqlRow, RedisRow, String, TimeWindow> {
     @Override
-    public void process(String key, ProcessWindowFunction<MysqlRow, EsRow, String, TimeWindow>.Context context, Iterable<MysqlRow> elements, Collector<EsRow> out) {
+    public void process(String key, ProcessWindowFunction<MysqlRow, RedisRow, String, TimeWindow>.Context context, Iterable<MysqlRow> elements, Collector<RedisRow> out) {
         Lists.newArrayList(elements).stream()
                 .map(
                         row -> {
@@ -29,11 +32,18 @@ public class AssemblingAndSortProcess extends ProcessWindowFunction<MysqlRow, Es
                                 idBuilder.append("_").append(optType.equals(RowOptType.DELETE) ? before.get(primaryKey) : after.get(primaryKey));
                             }
 
-                            String id = idBuilder.toString();
-                            return new EsRow(index, id, JSON.toJSONString(after), optType, row.getTs());
+                            Map<String, String> data = new HashMap<>();
+
+                            if(after != null && !after.isEmpty()) {
+                                for (Map.Entry<String, Object> entry : after.entrySet()) {
+                                    data.put(entry.getKey(), String.valueOf(entry.getValue()));
+                                }
+                            }
+
+                            return new RedisRow(index + idBuilder, data, row.getOptType(), row.getTs());
                         }
                 )
-                .sorted(Comparator.comparing(EsRow::getPos))
+                .sorted(Comparator.comparing(RedisRow::getPos))
                 .forEach(out::collect);
     }
 }

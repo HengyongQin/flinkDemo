@@ -2,6 +2,7 @@ package flink.api.syn.operator;
 
 import com.samur.common.pojo.RowOptType;
 import com.samur.common.pool.RedisClusterPool;
+import com.samur.common.utils.DateUtils;
 import flink.api.syn.pojo.RedisRow;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
@@ -25,8 +26,8 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
 
     @Override
     public void invoke(RedisRow[] rows, Context context) throws Exception {
-        Jedis resource = jedisPool.getResource();
-        System.out.println("从线程池获取连接！！" + resource);
+        Jedis jedis = jedisPool.getResource();
+        System.out.println("从线程池获取连接！！" + jedis);
 
         try {
             for (RedisRow row : rows) {
@@ -34,20 +35,22 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
                 Object data = row.getData();
 
                 if(row.getOptType() == RowOptType.DELETE) {
-                    resource.del(row.getKey());
+                    jedis.del(row.getKey());
                 }
                 else if (dataType.equals(RedisRow.DataType.HASH)){
-                    writeData(resource, row.getKey(), (Map<String, String>) data);
+                    writeData(jedis, row.getKey(), (Map<String, String>) data);
                 }
                 else  {
-                    writeData(resource, row.getKey(), (String) data);
+                    writeData(jedis, row.getKey(), (String) data);
                 }
+
+                setExpire(row, jedis);
             }
         }
         finally {
-            if(resource != null) {
-                System.out.println("关闭连接：" + resource);
-                resource.close();
+            if(jedis != null) {
+                System.out.println("关闭连接：" + jedis);
+                jedis.close();
             }
         }
     }
@@ -75,5 +78,16 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
      */
     private void writeData(Jedis resource, String key, Map<String, String> value) {
         resource.hset(key, value);
+    }
+
+    /**
+     * 设置过期时间
+     */
+    private void setExpire(RedisRow row, Jedis jedis) {
+        long expireTime = row.getExpireTime();
+
+        if(expireTime > 0 && row.getOptType() != RowOptType.DELETE) {
+            jedis.expireAt(row.getKey(), expireTime);
+        }
     }
 }

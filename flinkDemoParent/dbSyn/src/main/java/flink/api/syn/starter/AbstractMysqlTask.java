@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.runtime.operators.util.AssignerWithPeriodicWatermarksAdapter;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * mysql数据源任务 抽象
@@ -54,8 +55,24 @@ public abstract class AbstractMysqlTask {
      * @throws IOException
      */
     protected static ParameterTool getParam(String[] args) throws IOException {
-        return ParameterTool.fromPropertiesFile(PropertiesHelper.getPropertiesResource())
+        return getParam(args, null);
+    }
+
+    /**
+     * 获取系统参数
+     * @param args
+     * @return
+     * @throws IOException
+     */
+    protected static ParameterTool getParam(String[] args, Map<String, String> customParam) throws IOException {
+        ParameterTool parameterTool = ParameterTool.fromPropertiesFile(PropertiesHelper.getPropertiesResource())
                 .mergeWith(ParameterTool.fromArgs(args));
+
+        if(customParam != null) {   // 设置自定义参数
+            parameterTool = parameterTool.mergeWith(ParameterTool.fromMap(customParam));
+        }
+
+        return parameterTool;
     }
 
     /**

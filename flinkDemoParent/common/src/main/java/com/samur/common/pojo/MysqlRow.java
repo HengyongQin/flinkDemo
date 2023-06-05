@@ -46,4 +46,8 @@ public class MysqlRow implements Serializable {
     public String toString() {
         return JSONObject.toJSONString(this);
     }
+
+    public Map<String, Object> getData() {
+        return after == null ? before : after;
+    }
 }

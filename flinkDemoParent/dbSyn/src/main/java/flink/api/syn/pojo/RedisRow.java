@@ -18,6 +18,10 @@ public class RedisRow extends SinkRow {
         this(key, data, optType, ts, DataType.STRING);
     }
 
+    public RedisRow(Map<String, Double> data, String key, RowOptType optType, long ts) {
+        this(key, data, optType, ts, DataType.Z_SET);
+    }
+
     private RedisRow(String key, Object data, RowOptType optType, long ts, DataType dataType) {
         super(optType, ts);
         this.key = key;
@@ -42,7 +46,7 @@ public class RedisRow extends SinkRow {
     private DataType dataType;
 
     public enum DataType {
-        HASH, STRING
+        HASH, STRING, Z_SET
     }
 
     @Setter

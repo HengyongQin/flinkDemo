@@ -18,10 +18,7 @@ public class KeyUtils {
      * @return
      */
     public static String createRedisKey(String database, String tableName, String[] keys, Map<String, Object> data) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(database)
-                .append(tableName)
-                .append("_");
+        StringBuilder builder = getKeyHeader(database, tableName);
 
         Arrays.stream(keys)
                 .sorted(Comparator.comparing(String::hashCode))
@@ -38,12 +35,15 @@ public class KeyUtils {
      * @return
      */
     public static String createRedisKey(String database, String tableName, String keyValue) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(database)
-                .append(tableName)
-                .append("_")
-                .append(keyValue);
+        return getKeyHeader(database, tableName)
+                .append(keyValue).append("_").toString();
+    }
 
-        return builder.toString();
+    private static StringBuilder getKeyHeader(String database, String tableName) {
+        StringBuilder builder = new StringBuilder();
+        return builder.append(database)
+                .append("_")
+                .append(tableName)
+                .append("_");
     }
 }

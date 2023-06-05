@@ -40,6 +40,9 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
                 else if (dataType.equals(RedisRow.DataType.HASH)){
                     writeData(jedis, row.getKey(), (Map<String, String>) data);
                 }
+                else if(dataType.equals(RedisRow.DataType.Z_SET)) {
+                    jedis.zadd(row.getKey(), (Map<String, Double>)row.getData());
+                }
                 else  {
                     writeData(jedis, row.getKey(), (String) data);
                 }

@@ -8,41 +8,42 @@ import flink.api.syn.pojo.RedisRow;
 import flink.api.util.StateUtil;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.util.Collector;
+import org.apache.flink.streaming.api.functions.async.ResultFuture;
+import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class CountProcessFunction extends KeyedProcessFunction<String, MysqlRow, RedisRow[]> {
-    private static final String ALL_COUNT_STATE_NAME = "all_count";
+public class AsyncCountProcessFunction extends RichAsyncFunction<MysqlRow, RedisRow[]> {
     private static final String PRODUCT_COUNT_STATE_NAME = "product_count";
     private static final String PRODUCT_NO = "product_id";
-
-    /**
-     * 统计所有产品订单量
-     */
-    private MapState<String, Integer> allCountState;
+    private ProductDimTable productDimTable;
 
     /**
      * 统计每个产品订单量
      */
-    private MapState<String, Map<String, Integer>> productCountState;
-
-    private ProductDimTable products;
+    private Map<String, Map<String, Integer>> productCountState;
 
     @Override
     public void open(Configuration parameters) throws Exception {
-        allCountState = StateUtil.createIntegerState(ALL_COUNT_STATE_NAME, getRuntimeContext(), 2);
-        productCountState = StateUtil.createMapState(PRODUCT_COUNT_STATE_NAME, getRuntimeContext(), 2);
-        products = new ProductDimTable(10 * 1000); // 10 秒钟过期;
+        productDimTable = new ProductDimTable(10 * 1000);
+        productCountState = new HashMap<>();// 不支持state，用hashmap代替
     }
 
     @Override
-    public void processElement(MysqlRow row, KeyedProcessFunction<String, MysqlRow, RedisRow[]>.Context ctx, Collector<RedisRow[]> out) throws Exception {
-        out.collect(new RedisRow[]{
-                countAll(row),
-                countProductCount(row)});
+    public void asyncInvoke(MysqlRow row, ResultFuture<RedisRow[]> resultFuture) {
+        try {
+            RedisRow redisRow = countProductCount(row);
+            List<RedisRow[]> list = new ArrayList<>();
+            list.add(new RedisRow[]{redisRow});
+            resultFuture.complete(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -53,7 +54,7 @@ public class CountProcessFunction extends KeyedProcessFunction<String, MysqlRow,
     private RedisRow countProductCount(MysqlRow row) throws Exception {
         String currentDate = DateUtils.getCurrentDate();
         String productNo = getProductKey(row);
-        String productName = products.getProductName(productNo);
+        String productName = productDimTable.getProductName(productNo);
         RowOptType optType = row.getOptType();
 
         Map<String, Integer> state = productCountState.get(currentDate);
@@ -69,24 +70,6 @@ public class CountProcessFunction extends KeyedProcessFunction<String, MysqlRow,
         Map<String, Double> result = new HashMap<>();
         state.forEach((k, v) -> result.put(k, Double.valueOf(v)));
         return new RedisRow(result, PRODUCT_COUNT_STATE_NAME, RowOptType.INSERT, System.currentTimeMillis());
-    }
-
-    /**
-     * 统计所有产品订单量
-     * @param row
-     * @return
-     * @throws Exception
-     */
-    private  RedisRow countAll(MysqlRow row) throws Exception {
-        String currentDate = DateUtils.getCurrentDate();
-        RowOptType optType = row.getOptType();
-        Integer count = allCountState.get(currentDate);
-        count = count == null ? 0 : count;
-        count = optType.equals(RowOptType.DELETE) ? (count - 1)
-                : optType.equals(RowOptType.UPDATE) ? 0 : (count + 1);
-        allCountState.put(currentDate, count);
-
-        return new RedisRow(ALL_COUNT_STATE_NAME, count.toString(), RowOptType.INSERT, System.currentTimeMillis());
     }
 
     /**

@@ -52,4 +52,14 @@ public class RedisRow extends SinkRow {
     @Setter
     @Getter
     private long expireTime = -1;
+
+    @Override
+    public String toString() {
+        return "RedisRow{" +
+                "key='" + key + '\'' +
+                ", data=" + data +
+                ", dataType=" + dataType +
+                ", expireTime=" + expireTime +
+                '}';
+    }
 }

@@ -97,7 +97,7 @@ public abstract class AbstractMysqlTask {
      * 水印
      * @return
      */
-    private static AssignerWithPeriodicWatermarksAdapter.Strategy<MysqlRow> waterMark() {
+    protected static AssignerWithPeriodicWatermarksAdapter.Strategy<MysqlRow> waterMark() {
         return new AssignerWithPeriodicWatermarksAdapter.Strategy<>(
                 new BoundedOutOfOrdernessTimestampExtractor<MysqlRow>(Time.milliseconds(500)) {
                     @Override

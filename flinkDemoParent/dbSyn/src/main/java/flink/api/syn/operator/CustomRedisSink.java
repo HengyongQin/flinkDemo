@@ -28,6 +28,10 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
     public void invoke(RedisRow[] rows, Context context) throws Exception {
         Jedis jedis = jedisPool.getResource();
         System.out.println("从线程池获取连接！！" + jedis);
+        System.out.println("写入数据：");
+        for (RedisRow row : rows) {
+            System.out.println(row.toString());
+        }
 
         try {
             for (RedisRow row : rows) {
@@ -52,7 +56,6 @@ public class CustomRedisSink extends RichSinkFunction<RedisRow[]> {
         }
         finally {
             if(jedis != null) {
-                System.out.println("关闭连接：" + jedis);
                 jedis.close();
             }
         }

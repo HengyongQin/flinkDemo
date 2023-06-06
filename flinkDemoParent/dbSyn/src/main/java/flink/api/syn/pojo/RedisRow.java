@@ -60,6 +60,7 @@ public class RedisRow extends SinkRow {
                 ", data=" + data +
                 ", dataType=" + dataType +
                 ", expireTime=" + expireTime +
+                ", optType=" + optType +
                 '}';
     }
 }

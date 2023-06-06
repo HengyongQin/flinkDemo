@@ -62,9 +62,10 @@ public class BroadCountProcessFunction extends BroadcastProcessFunction<MysqlRow
 
                 Map<String, Double> result = new HashMap<>();
                 state.forEach((k, v) -> result.put(k, Double.valueOf(v)));
-                out.collect(new RedisRow[]{
-                        new RedisRow(result, PRODUCT_COUNT_STATE_NAME, RowOptType.DELETE, System.currentTimeMillis()),
-                        new RedisRow(result, PRODUCT_COUNT_STATE_NAME, RowOptType.INSERT, System.currentTimeMillis())});
+                RedisRow delRow = new RedisRow(result, PRODUCT_COUNT_STATE_NAME, RowOptType.DELETE, System.currentTimeMillis());
+                RedisRow addRow = new RedisRow(result, PRODUCT_COUNT_STATE_NAME, RowOptType.INSERT, System.currentTimeMillis());
+                addRow.setExpireTime(DateUtils.getTodayEndTime());
+                out.collect(new RedisRow[]{delRow, addRow});
             }
         }
     }

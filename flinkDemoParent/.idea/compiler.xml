@@ -8,9 +8,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="common" />
-        <module name="business" />
         <module name="dbSyn" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="business" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

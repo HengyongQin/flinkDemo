@@ -22,7 +22,7 @@ import java.sql.Timestamp;
 import java.util.TreeSet;
 
 /**
- * 用户行为分析
+ * 用户行为分析 计算浏览量top3的产品id
  */
 public class UserBehaviorAnalysisTask {
     private static final int topSize = 3;

@@ -26,8 +26,8 @@ import java.util.TreeSet;
  */
 public class UserBehaviorAnalysisTask {
     private static final int topSize = 3;
-    private static final Time WINDOW_LENGTH = Time.days(1);
-    private static final Time REFRESH_INTERVAL = Time.minutes(5);
+    private static final Time WINDOW_LENGTH = Time.hours(1);  // 窗口长度
+    private static final Time REFRESH_INTERVAL = Time.minutes(5); // 数据刷新时间
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = getEnv();
@@ -36,7 +36,7 @@ public class UserBehaviorAnalysisTask {
         stream.filter(e -> UserBehavior.BehaviorType.PV.equals(e.getBehavior()))  // 过滤出浏览行为
                 .keyBy(UserBehavior::getItemId)
                 .window(SlidingEventTimeWindows.of(WINDOW_LENGTH, REFRESH_INTERVAL))
-                .aggregate(new AggregateFunction<UserBehavior, Integer, Integer>() {
+                .aggregate(new AggregateFunction<UserBehavior, Integer, Integer>() {  // 计数
 
                     @Override
                     public Integer createAccumulator() {
@@ -61,7 +61,7 @@ public class UserBehaviorAnalysisTask {
                         out.collect(new ItemCount(key, input.iterator().next(), window.getEnd())))
                 .returns(TypeInformation.of(ItemCount.class))
                         .windowAll(TumblingEventTimeWindows.of(REFRESH_INTERVAL))
-                .process(new ProcessAllWindowFunction<ItemCount, String, TimeWindow>() {
+                .process(new ProcessAllWindowFunction<ItemCount, String, TimeWindow>() {  //滚动窗口计算
 
                     @Override
                     public void process(ProcessAllWindowFunction<ItemCount, String, TimeWindow>.Context context, Iterable<ItemCount> elements, Collector<String> out) throws Exception {
@@ -73,7 +73,8 @@ public class UserBehaviorAnalysisTask {
                         int index = 1;
 
                         for (ItemCount itemCount : itemCounts) {
-                            builder.append(String.format(" NO %s: 商品id=%s ，浏览量：%s", index, itemCount.getItemId(), itemCount.getCount())).append("\n");
+                            builder.append(String.format(" NO %s: 商品id=%s ，浏览量：%s", index, itemCount.getItemId(), itemCount.getCount()))
+                                    .append("\n");
 
                             if(++index > topSize) {
                                 break;
@@ -92,7 +93,7 @@ public class UserBehaviorAnalysisTask {
 
     private static StreamExecutionEnvironment getEnv() {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(2);
+        env.setParallelism(4);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         return env;
 //                Configuration configuration = new Configuration();

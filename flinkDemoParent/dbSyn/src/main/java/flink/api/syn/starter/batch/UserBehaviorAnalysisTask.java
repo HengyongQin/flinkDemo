@@ -3,20 +3,16 @@ package flink.api.syn.starter.batch;
 import flink.api.syn.pojo.ItemCount;
 import flink.api.syn.pojo.UserBehavior;
 import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.runtime.operators.util.AssignerWithPeriodicWatermarksAdapter;
@@ -29,7 +25,9 @@ import java.util.TreeSet;
  * 用户行为分析
  */
 public class UserBehaviorAnalysisTask {
-    private static final int topSize = 2;
+    private static final int topSize = 3;
+    private static final Time WINDOW_LENGTH = Time.days(1);
+    private static final Time REFRESH_INTERVAL = Time.minutes(5);
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = getEnv();
@@ -37,7 +35,7 @@ public class UserBehaviorAnalysisTask {
 
         stream.filter(e -> UserBehavior.BehaviorType.PV.equals(e.getBehavior()))  // 过滤出浏览行为
                 .keyBy(UserBehavior::getItemId)
-                .window(SlidingEventTimeWindows.of(Time.days(1), Time.minutes(5)))
+                .window(SlidingEventTimeWindows.of(WINDOW_LENGTH, REFRESH_INTERVAL))
                 .aggregate(new AggregateFunction<UserBehavior, Integer, Integer>() {
 
                     @Override
@@ -62,54 +60,47 @@ public class UserBehaviorAnalysisTask {
                 }, (WindowFunction<Integer, ItemCount, Long, TimeWindow>) (key, window, input, out) ->
                         out.collect(new ItemCount(key, input.iterator().next(), window.getEnd())))
                 .returns(TypeInformation.of(ItemCount.class))
-                .keyBy(ItemCount::getTs)
-                .process(new ItemCountProcess()).setParallelism(1)
+                        .windowAll(TumblingEventTimeWindows.of(REFRESH_INTERVAL))
+                .process(new ProcessAllWindowFunction<ItemCount, String, TimeWindow>() {
+
+                    @Override
+                    public void process(ProcessAllWindowFunction<ItemCount, String, TimeWindow>.Context context, Iterable<ItemCount> elements, Collector<String> out) throws Exception {
+                        TreeSet<ItemCount> itemCounts = new TreeSet<>(ItemCount::compareTo);
+                        elements.forEach(itemCounts::add);
+                        StringBuilder builder = new StringBuilder("=============== 统计窗口结束时间：")
+                                .append(new Timestamp(context.window().getEnd()))
+                                .append(" =============== \n");
+                        int index = 1;
+
+                        for (ItemCount itemCount : itemCounts) {
+                            builder.append(String.format(" NO %s: 商品id=%s ，浏览量：%s", index, itemCount.getItemId(), itemCount.getCount())).append("\n");
+
+                            if(++index > topSize) {
+                                break;
+                            }
+                        }
+
+                        out.collect(builder.toString());
+                    }
+                })
                 .print().setParallelism(1);
 
 
         env.execute(UserBehaviorAnalysisTask.class.getName());
     }
 
-    private static class ItemCountProcess extends KeyedProcessFunction<Long, ItemCount, String> {
-        private ListState<ItemCount> listState;
-
-        @Override
-        public void open(Configuration parameters) throws Exception {
-            listState = getRuntimeContext().getListState(new ListStateDescriptor<>("aa", ItemCount.class));
-        }
-
-        @Override
-        public void processElement(ItemCount item, KeyedProcessFunction<Long, ItemCount, String>.Context ctx, Collector<String> out) throws Exception {
-            listState.add(item);
-            ctx.timerService().registerProcessingTimeTimer(item.getTs());
-        }
-
-        @Override
-        public void onTimer(long timestamp, KeyedProcessFunction<Long, ItemCount, String>.OnTimerContext ctx, Collector<String> out) throws Exception {
-            TreeSet<ItemCount> itemCounts = new TreeSet<>(ItemCount::compareTo);
-            listState.get().forEach(itemCounts::add);
-            listState.clear();
-            StringBuilder builder = new StringBuilder(Thread.currentThread().getId() + "统计窗口结束时间：")
-                    .append(new Timestamp(timestamp));
-            int index = 1;
-
-            for (ItemCount itemCount : itemCounts) {
-                builder.append(String.format(" NO %s: 商品id=%s ，浏览量：%s, 创建线程： %s", index, itemCount.getItemId(), itemCount.getCount(), itemCount.getThreadId()));
-
-                if(++index > topSize) {
-                    break;
-                }
-            }
-
-            out.collect(builder.toString());
-        }
-    }
 
     private static StreamExecutionEnvironment getEnv() {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4);
+        env.setParallelism(2);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         return env;
+//                Configuration configuration = new Configuration();
+//        configuration.setInteger(RestOptions.PORT, 8083);
+//        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
+//        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+//        env.setParallelism(2);
+//        return env;
 
     }
 

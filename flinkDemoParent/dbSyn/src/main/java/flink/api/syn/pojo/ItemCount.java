@@ -15,14 +15,10 @@ public class ItemCount implements Serializable, Comparable<ItemCount> {
 
     private long ts;
 
-    private long threadId;
-
     public ItemCount(long itemId, int count, long ts) {
         this.itemId = itemId;
         this.count = count;
         this.ts = ts;
-        this.threadId = Thread.currentThread().getId();
-//        System.out.println(this);
     }
 
     @Override
@@ -31,7 +27,7 @@ public class ItemCount implements Serializable, Comparable<ItemCount> {
                 "itemId=" + itemId +
                 ", count=" + count +
                 ", ts=" + new Timestamp(ts) +
-                '}' + "##" + threadId;
+                '}';
     }
 
     @Override

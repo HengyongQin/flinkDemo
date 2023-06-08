@@ -70,7 +70,6 @@ public class UrlViewCountTask {
     private static StreamExecutionEnvironment getEnv() {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(4);
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         return env;
     }
 

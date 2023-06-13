@@ -12,6 +12,7 @@
         <module>dbSyn</module>
         <module>common</module>
         <module>business</module>
+        <module>spk</module>
     </modules>
 
     <properties>

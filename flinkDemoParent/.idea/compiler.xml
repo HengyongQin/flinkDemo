@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="common" />
         <module name="dbSyn" />
+        <module name="spk" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
